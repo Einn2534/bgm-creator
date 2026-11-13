@@ -1,10 +1,26 @@
 # Loop Atelier — BGMクリエイター
 
-Windows用のローカルBGM制作ツールです。テンポ、調、音符、楽器をJSONの「設計図」に保存し、同じ設計図と音源から同じ音声を生成します。外部の音楽生成APIやAPIキーは使いません。
+Windows / macOS用のローカルBGM制作ツールです。テンポ、調、音符、楽器をJSONの「設計図」に保存し、同じ設計図と音源から同じ音声を生成します。外部の音楽生成APIやAPIキーは使いません。
 
 ## 起動
 
-**`BGMクリエイター.cmd` をダブルクリック**してください。このフォルダ内にPython仮想環境を作り、必要なライブラリと音源を準備します。初回の準備にはインターネットとPython 3.13が必要です。準備後の作曲・再生・WAV出力はオフラインで動作します。MP3出力にはPATH上のffmpegを使います。
+### Windows
+
+**`BGMクリエイター.cmd` をダブルクリック**してください。
+
+### macOS
+
+1. [python.org](https://www.python.org/downloads/macos/) からPython 3.13以降をインストールします。Apple Silicon / Intel Macのどちらでも利用できます。
+2. 初回だけターミナルでこのフォルダへ移動し、次を実行します。
+
+```bash
+chmod +x "BGMクリエイター.command"
+./BGMクリエイター.command
+```
+
+次回からはFinderで **`BGMクリエイター.command` をダブルクリック**して起動できます。macOSに開くことを止められた場合は、ファイルをControlキーを押しながらクリックして「開く」を選んでください。
+
+どちらのOSでも、このフォルダ内にPython仮想環境を作り、必要なライブラリと音源を準備します。初回の準備にはインターネットが必要です。準備後の作曲・再生・WAV出力はオフラインで動作します。MP3出力とWAV以外の鼻歌読み込みには、PATH上のffmpegが必要です。macOSではHomebrewを利用している場合 `brew install ffmpeg` で追加できます。
 
 1. 「▶ ループ再生」で最初の曲を試聴。
 2. 雰囲気、小節数、シードを選び「新しい曲を作る」。シードを変えると別のフレーズになります。
@@ -20,7 +36,7 @@ Windows用のローカルBGM制作ツールです。テンポ、調、音符、�
 
 1. 伴奏の雰囲気・テンポ・調・小節数を決めて曲を作ります。
 2. **「鼻歌を取り込む…」** を押します。
-3. 録音済みのWAV・MP3・M4Aなどを選ぶか、**「● マイク録音」→歌う→「■ 録音停止」** で録音します。Windowsの既定の入力マイクを使います。
+3. 録音済みのWAV・MP3・M4Aなどを選ぶか、**「● マイク録音」→歌う→「■ 録音停止」** で録音します。パソコンの既定の入力マイクを使います。
 4. フレーズの長さ、リズム補正、音程補正を選んで **「メロディとして取り込む」** を押します。
 5. 「この音だけ」でメロディを確認し、全体のループ再生で伴奏と試聴。楽器の変更や通常の書き出しができます。「ひとつ前に戻す」で元のメロディに戻せます。
 
@@ -28,6 +44,7 @@ Windows用のローカルBGM制作ツールです。テンポ、調、音符、�
 - **リズム**：16分音符・8分音符へ拍位置と長さをそろえるか、「原リズム」で音符と休符の長さの比率を保ちます。フレーズ全体の長さは、いずれも選んだ小節数に合わせます。
 - **音程**：「鼻歌の音程を保持」は検出した音を半音単位に丸め、調に含まれない音も臨時記号として保持します。「曲の調に合わせる」は現在の長調・短調の近い音に補正します。伴奏のコード進行は変更しません。
 - **録音**：マイクは録音ボタンを押したときだけ使用し、最大60秒で自動停止します。録音は `outputs/recordings/` に保存します。外部ファイルは120秒以内。WAV以外はffmpegで読み込みます。
+- **macOSのマイク許可**：初回録音時に表示される許可画面でマイク利用を許可してください。拒否した場合は「システム設定」→「プライバシーとセキュリティ」→「マイク」で、起動に使ったターミナルの許可を変更できます。
 - **保存**：抽出した音符と元音声のファイル名・SHA-256・補正設定を設計図に保存します。元音声がなくても設計図から再生できます。BGMに入るのは選んだ楽器の音です。音声のアップロードや外部AIへの送信は行いません。
 
 静かな場所で、伴奏なしの鼻歌を一音ずつ少し長めに録ってください。和音・複数の声・大きな雑音・速い装飾音は誤検出しやすく、音符の完全な再現は保証できません。音が検出できない場合は既存の曲を変更せずエラーを表示します。
@@ -54,13 +71,74 @@ Windows用のローカルBGM制作ツールです。テンポ、調、音符、�
 
 音の数と編曲の型を絞った初版です。レトロゲームはゲーム機風の音色・アルペジオであり、実機の正確なエミュレーションではありません。録音した合いの手、ピアノロール、自然言語で作曲するアプリ内AIは未実装です。Codexへの会話で設計図やプログラムを編集できます。
 
+## 音源を追加する
+
+### 既存楽器の音域を増やす
+
+木琴やマリンバなど、すでにある楽器へWAVを追加する手順です。
+
+1. WAVを `assets/samples/` に置きます。モノラル／ステレオのどちらも使用でき、ステレオは読み込み時にモノラル化されます。
+2. `assets/samples/manifest.json` の `samples` に次のような項目を追加します。
+3. アプリを再起動します。登録した複数の音程から、演奏する音に最も近いWAVが自動的に選ばれます。
+
+```json
+{
+  "instrument": "marimba",
+  "midi": 60,
+  "file": "marimba_C4.wav",
+  "url": "https://example.com/source",
+  "license": "CC0-1.0",
+  "authors": "制作者名",
+  "sha256": "WAVファイルのSHA-256"
+}
+```
+
+`instrument` は `bgm.py` の `INSTRUMENTS` にある内部名、`midi` はWAVが実際に鳴らす音程です。このアプリではC4＝60、C5＝72として扱います。SHA-256は次のコマンドで確認できます。
+
+Windows（PowerShell）：
+
+```powershell
+Get-FileHash assets\samples\marimba_C4.wav -Algorithm SHA256
+```
+
+macOS（ターミナル）：
+
+```bash
+shasum -a 256 assets/samples/marimba_C4.wav
+```
+
+### 新しい楽器を追加する
+
+例えば `piano` を追加する場合は、上記のWAVとマニフェスト登録に加えて次を変更します。
+
+1. `bgm.py` の `INSTRUMENTS` に `"piano"` を追加します。
+2. `app.py` の `SOUND_NAMES` に `"piano": "ピアノ（実音源）"` を追加します。
+3. 各WAVを `manifest.json` へ `"instrument": "piano"` として登録します。
+4. 最初からピアノを使う曲調が必要なら、`bgm.py` の `PRESETS` に追加します。
+5. 仮想環境のPythonで `-m unittest -v test_bgm test_humming test_app_humming` を実行します。
+
+`fetch_samples.py` は実行のたびに、同ファイルの `FILES` から `manifest.json` を作り直します。手作業で登録した項目は消えるため、再取得・他のパソコンへの配布にも対応させる場合は、取得元URLを固定して `fetch_samples.py` にも追加してください。`assets/samples/*.wav` はGit管理の対象外なので、WAVを置くだけではGitへのプッシュに含まれません。
+
+追加音源は、再配布や商用利用を含む利用条件を事前に確認し、配布元URL・制作者・ライセンス・SHA-256を記録してください。音源自体の利用条件と、その音源から生成した曲の独自性や権利の保証は別の問題です。
+
 ## コマンドで作る
+
+Windows（PowerShell）：
 
 ```powershell
 .\.venv\Scripts\python.exe bgm.py --preset "明るい散歩道" --seed 42 --bars 8 --out outputs\walk --mp3
 .\.venv\Scripts\python.exe bgm.py --song outputs\walk\song.json --bpm 110 --out outputs\walk_slow
 .\.venv\Scripts\python.exe bgm.py --hum "C:\path\鼻歌.wav" --hum-bars 2 --hum-grid 0.25 --out outputs\my_humming --mp3
 .\.venv\Scripts\python.exe -m unittest -v test_bgm test_humming test_app_humming
+```
+
+macOS（ターミナル）：
+
+```bash
+./.venv/bin/python bgm.py --preset "明るい散歩道" --seed 42 --bars 8 --out outputs/walk --mp3
+./.venv/bin/python bgm.py --song outputs/walk/song.json --bpm 110 --out outputs/walk_slow
+./.venv/bin/python bgm.py --hum "/path/to/鼻歌.wav" --hum-bars 2 --hum-grid 0.25 --out outputs/my_humming --mp3
+./.venv/bin/python -m unittest -v test_bgm test_humming test_app_humming
 ```
 
 `song.json` の `parts.bass.gain` などを変更すると音量を調整できます。音符は `beat`（拍位置）、`duration`（拍単位の長さ）、`degree`（現在の調の音階度数、0始まり）、`octave`（C4=60）、`velocity`（0〜1）で表現しています。半音の補正は省略可能な `accidental`（-1/0/1）に保存します。パートの再生成回数は `revision` に記録します。

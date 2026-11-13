@@ -1,8 +1,10 @@
-"""Windows desktop UI. Tk stays on its main thread; rendering runs in a worker."""
+"""Windows/macOS desktop UI. Tk stays on its main thread; rendering runs in a worker."""
 import copy
 import datetime
 import os
 import queue
+import subprocess
+import sys
 import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -15,6 +17,19 @@ import bgm
 SOUND_NAMES = {"xylophone": "木琴（実音源）", "marimba": "マリンバ（実音源）", "glockenspiel": "グロッケン（実音源）",
                "pizzicato": "弦ピチカート（実音源）", "plucked_bass": "プラックベース", "soft_keys": "やわらかい鍵盤",
                "flute": "フルート風", "pulse": "矩形波", "triangle": "三角波", "percussion": "パーカッション"}
+UI_FONT = "Hiragino Sans" if sys.platform == "darwin" else "Yu Gothic UI"
+TITLE_FONT = "Helvetica Neue" if sys.platform == "darwin" else "Segoe UI"
+
+
+def open_in_file_manager(path):
+    """Open a saved folder with the platform's file manager."""
+    path = str(path)
+    if sys.platform == "win32":
+        os.startfile(path)
+    elif sys.platform == "darwin":
+        subprocess.Popen(["open", path])
+    else:
+        subprocess.Popen(["xdg-open", path])
 
 
 class App:
@@ -38,7 +53,7 @@ class App:
             self.audio_error = str(error)
         style = ttk.Style()
         style.theme_use("clam")
-        style.configure(".", font=("Yu Gothic UI", 10), background="#1c2736", foreground="#e9eff7", fieldbackground="#27364a")
+        style.configure(".", font=(UI_FONT, 10), background="#1c2736", foreground="#e9eff7", fieldbackground="#27364a")
         style.configure("TButton", padding=(14, 9))
         style.map("TButton", background=[("active", "#385170")])
         style.configure("TCombobox", padding=5)
@@ -49,8 +64,8 @@ class App:
         style.configure("Accent.TButton", background="#25796e", foreground="white")
         outer = tk.Frame(root, bg="#121923", padx=28, pady=20)
         outer.pack(fill="both", expand=True)
-        tk.Label(outer, text="LOOP ATELIER", font=("Segoe UI", 24, "bold"), fg="#9ae2cc", bg="#121923").pack(anchor="w")
-        tk.Label(outer, text="曲を組み立てる。パートを聴く。自分のBGMに仕上げる。", font=("Yu Gothic UI", 11), fg="#a4b3c7", bg="#121923").pack(anchor="w", pady=(3, 17))
+        tk.Label(outer, text="LOOP ATELIER", font=(TITLE_FONT, 24, "bold"), fg="#9ae2cc", bg="#121923").pack(anchor="w")
+        tk.Label(outer, text="曲を組み立てる。パートを聴く。自分のBGMに仕上げる。", font=(UI_FONT, 11), fg="#a4b3c7", bg="#121923").pack(anchor="w", pady=(3, 17))
         settings = ttk.Frame(outer, padding=15)
         settings.pack(fill="x")
         self.preset = tk.StringVar(value=self.song["preset"])
@@ -113,8 +128,8 @@ class App:
         self.canvas.pack(fill="x")
         self.canvas.bind("<Configure>", lambda _: self.draw_wave())
         self.status = tk.StringVar(value="最初の曲を準備しています…")
-        tk.Label(outer, textvariable=self.status, anchor="w", bg="#121923", fg="#9ae2cc", font=("Yu Gothic UI", 10), wraplength=970).pack(fill="x", pady=(12, 0))
-        tk.Label(outer, text="音量・消音・残響は再生し直すと反映。楽器・テンポ・調は「設定を反映」。\n書き出し：ループWAV / 各パート / 継ぎ目確認用 / 場面転換SE / 設計図 / 音源の出典", anchor="w", justify="left", bg="#121923", fg="#8396ae", font=("Yu Gothic UI", 9)).pack(fill="x", pady=(8, 0))
+        tk.Label(outer, textvariable=self.status, anchor="w", bg="#121923", fg="#9ae2cc", font=(UI_FONT, 10), wraplength=970).pack(fill="x", pady=(12, 0))
+        tk.Label(outer, text="音量・消音・残響は再生し直すと反映。楽器・テンポ・調は「設定を反映」。\n書き出し：ループWAV / 各パート / 継ぎ目確認用 / 場面転換SE / 設計図 / 音源の出典", anchor="w", justify="left", bg="#121923", fg="#8396ae", font=(UI_FONT, 9)).pack(fill="x", pady=(8, 0))
         root.protocol("WM_DELETE_WINDOW", self.close)
         self.poll_after = root.after(100, self.poll)
         self.initial_after = root.after(150, lambda: self.render_song(self.song))
@@ -208,7 +223,11 @@ class App:
                     messagebox.showerror("処理できませんでした", value)
                 elif event == "export":
                     self.status.set(f"保存しました: {value}")
-                    os.startfile(str(value))
+                    try:
+                        open_in_file_manager(value)
+                    except OSError:
+                        # Export succeeded; leave the path visible if Finder/Explorer cannot be opened.
+                        pass
                 else:
                     if self.stems is not None:
                         self.previous = (self.song, self.stems)
@@ -271,7 +290,7 @@ class App:
         for bar in range(self.song["bars"]):
             x = width * bar / self.song["bars"]
             self.canvas.create_line(x, 0, x, 83, fill="#263344")
-            self.canvas.create_text(x + 9, 10, text=str(bar + 1), fill="#7b8da5", font=("Segoe UI", 8))
+            self.canvas.create_text(x + 9, 10, text=str(bar + 1), fill="#7b8da5", font=(TITLE_FONT, 8))
 
     def undo(self):
         if not self.guard() or not self.previous: return

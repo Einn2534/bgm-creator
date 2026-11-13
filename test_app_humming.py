@@ -77,4 +77,12 @@ class AppHummingTests(unittest.TestCase):
             self.assertEqual(received[0][1], {"phrase_bars": 2, "grid": .25, "snap_to_key": True})
 
 
+class PlatformHelpersTests(unittest.TestCase):
+    def test_open_in_file_manager_uses_macos_open(self):
+        path = Path("/tmp/BGM output")
+        with patch.object(app.sys, "platform", "darwin"), patch.object(app.subprocess, "Popen") as popen:
+            app.open_in_file_manager(path)
+        popen.assert_called_once_with(["open", str(path)])
+
+
 if __name__ == "__main__": unittest.main()

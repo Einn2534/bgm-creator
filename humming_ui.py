@@ -1,5 +1,6 @@
 """File selection and explicitly started local microphone recording."""
 import datetime
+import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -8,6 +9,8 @@ from scipy.io import wavfile
 
 import bgm
 from humming import MicrophoneRecorder
+
+UI_FONT = "Hiragino Sans" if sys.platform == "darwin" else "Yu Gothic UI"
 
 
 class HummingDialog:
@@ -24,7 +27,7 @@ class HummingDialog:
         self.win.configure(bg="#1c2736")
         body = ttk.Frame(self.win, padding=22)
         body.pack(fill="both", expand=True)
-        ttk.Label(body, text="鼻歌を、曲のメロディに。", font=("Yu Gothic UI", 17, "bold")).pack(anchor="w", pady=(0, 8))
+        ttk.Label(body, text="鼻歌を、曲のメロディに。", font=(UI_FONT, 17, "bold")).pack(anchor="w", pady=(0, 8))
         ttk.Label(body, text=f"今の伴奏：{bars}小節 / {bpm} BPM。鼻歌だけを、はっきり一音ずつ歌ってください。\n音声はPC内で解析します。取り込みで置き換わるのはメロディだけです。", justify="left").pack(anchor="w")
         buttons = ttk.Frame(body)
         buttons.pack(fill="x", pady=15)
@@ -67,7 +70,7 @@ class HummingDialog:
         try:
             recorder.start()
         except Exception as error:
-            messagebox.showerror("録音できません", "Windowsの既定の入力マイクと、マイクの利用許可を確認してください。\n音声ファイルからの取り込みも使えます。\n\n" + str(error), parent=self.win)
+            messagebox.showerror("録音できません", "既定の入力マイクと、OSのマイク利用許可を確認してください。\n音声ファイルからの取り込みも使えます。\n\n" + str(error), parent=self.win)
             return
         self.recorder = recorder
         self.file_button.configure(state="disabled")
